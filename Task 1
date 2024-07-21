@@ -1,33 +1,49 @@
+import time
+from pprint import pprint
+import numpy as np
+import pandas as pd
 data = pd.read_csv
 data.info()
 data.head()
-add Codeadd Markdown
-# delete unneeded columns
+<class 'pandas.core.frame.DataFrame'>
+RangeIndex: 10000 entries, 0 to 9999
+Data columns (total 4 columns):
+ #   Column        Non-Null Count  Dtype 
+---  ------        --------------  ----- 
+ 0   Unnamed: 0    10000 non-null  int64 
+ 1   Unnamed: 0.1  10000 non-null  int64 
+ 2   Body          10000 non-null  object
+ 3   Label         10000 non-null  int64 
+dtypes: int64(3), object(1)
+memory usage: 312.6+ KB
 data.drop(["Unnamed: 0","Unnamed: 0.1"],inplace=True,axis=1)
-add Codeadd Markdown
 # Remove emails with body longer than 10000
 data = data[data['Body'].apply(lambda x: len(str(x)) <= 10000)]
-add Codeadd Markdown
 # remove missing values (NaN)
 data.dropna(inplace=True)
 data.info()
 data.head()
-add Codeadd Markdown
+<class 'pandas.core.frame.DataFrame'>
+Int64Index: 9882 entries, 0 to 9999
+Data columns (total 2 columns):
+ #   Column  Non-Null Count  Dtype 
+---  ------  --------------  ----- 
+ 0   Body    9882 non-null   object
+ 1   Label   9882 non-null   int64 
+dtypes: int64(1), object(1)
+memory usage: 231.6+ KB
 data.describe(include='object')
-add Codeadd Markdown
 import seaborn as sns
 import matplotlib.pyplot as plt
-​
+
 ax = sns.countplot(x=data["Label"], palette=("Pastel2"))
 abs_values = data["Label"].value_counts(ascending=False).values
 ax.bar_label(container=ax.containers[0], labels=abs_values)
 ax.set_xticklabels(['hams', 'spams'])
-​
+
 plt.xlabel(None)
 plt.show()
-add Codeadd Markdown
 emails = data["Body"]
-add Codeadd Markdown
 def max_min_avg_len(email_set):
     max_len, min_len = len(email_set[0]), len(email_set[0])
     avg_len = 0
@@ -39,34 +55,30 @@ def max_min_avg_len(email_set):
         avg_len += len(email)
     avg_len = avg_len // len(email_set)
     return f"maximum length: {max_len}, minimum length: {min_len}, average length: {avg_len}"
-add Codeadd Markdown
 hams = list(emails[data["Label"] == 1])
 spams = list(emails[data["Label"] == 0])
-​
-print("All emails:", max_min_avg_len(emails))
-print("Ham:", max_min_avg_len(hams))
-print("Spam:", max_min_avg_len(spams))
-add Codeadd Markdown
-Here I'm removing unneeded characters, like HTML tags, emails etc.
 
-add Codeadd Markdown
-import re
-​
-# remove email addresses
-emails = [re.sub('\S*@\S*\s?', '', text) for text in emails]
-# remove url links
-emails = [re.sub('\S*(http[s]?://|www\.)\S*', '', text) for text in emails]
-# remove HTML tags
-emails = [re.sub(r"'<.*?>'", "", text) for text in emails]
-# remove special characters and numbers
-emails = [re.sub("[^a-zA-Z]"," ",text) for text in emails]
-# remove too short (2- characters) words
-emails = [re.sub(r"\b\w{1,2}\b", "",text) for text in emails]
-# and too long (17+ characters) 
-emails = [re.sub(r"\b\w{17,}\b", "",text) for text in emails]
-# remove multiple spaces
-emails = [re.sub(' +', ' ', text).strip() for text in emails]
-# lower
-emails = [text.lower() for text in emails]
-​
-emails[0]
+print("All emails:", max_min_avg_len(emails))
+def shuffle_data(features, labels):
+    indices = np.arange(features.shape[0])
+    np.random.shuffle(indices)
+    return features[indices], labels[indices]
+
+def unbalanced_dataset(dataset): 
+    labels = np.asarray(data["Label"])
+    
+    normal = dataset[labels == 0]
+    anomalies = dataset[labels == 1]
+
+    # select random 5% of anomalies
+    num_anomalies = int(len(normal) * 0.05)
+    anomaly_indices = np.random.choice(anomalies.shape[0], num_anomalies, replace=False)
+    selected_anomalies = anomalies[anomaly_indices]
+    
+    # combine
+    X_unbalanced = np.vstack([normal, selected_anomalies])
+    y_unbalanced = np.concatenate([np.full((len(normal)), 1), np.full((len(selected_anomalies)), 0)])
+
+    # shuffle
+    X_unbalanced, y_unbalanced = shuffle_data(X_unbalanced, y_unbalanced)
+    return X_unbalanced, y_unbalanced
