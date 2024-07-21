@@ -1,4 +1,4 @@
-data = pd.read_csv('/kaggle/input/email-spam-dataset/enronSpamSubset.csv')
+data = pd.read_csv
 data.info()
 data.head()
 add Codeadd Markdown
